@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  background: #faf8f5;
+  color: #1c1614;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Area sentuh minimal untuk jempol. Tombol kecil adalah keluhan nomor satu
+   pada antarmuka pesan-dari-meja: orang mengetuk dua kali, pesanannya dobel. */
+button {
+  touch-action: manipulation;
+}
+
+/* Menghormati preferensi sistem. Kartu order baru di dashboard berkedip;
+   bagi sebagian orang itu mengganggu. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes masuk {
+  from {
+    background-color: #fdf3dd;
+  }
+  to {
+    background-color: #ffffff;
+  }
+}
+
+.kartu-baru {
+  animation: masuk 2.5s ease-out 1;
+}
+
+.sembunyi-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.sembunyi-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
