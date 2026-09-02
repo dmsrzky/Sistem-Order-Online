@@ -6,22 +6,7 @@ import { useRouter } from "next/navigation";
 import { brand } from "@/config/brand";
 import { rupiah } from "@/lib/format";
 import { useKeranjang } from "@/lib/keranjang";
-
-declare global {
-  interface Window {
-    snap?: {
-      pay: (
-        token: string,
-        opsi: {
-          onSuccess?: () => void;
-          onPending?: () => void;
-          onError?: () => void;
-          onClose?: () => void;
-        }
-      ) => void;
-    };
-  }
-}
+import { muatSnap, simpanToken } from "@/lib/snap";
 
 export default function Keranjang() {
   const keranjang = useKeranjang();
@@ -30,34 +15,12 @@ export default function Keranjang() {
   const [galat, setGalat] = useState<string | null>(null);
   const [snapSiap, setSnapSiap] = useState(false);
 
-  // Skrip Snap dimuat sekali di sini, bukan di layout, supaya halaman menu
-  // tidak ikut menunggu skrip pihak ketiga. Menu adalah halaman pertama yang
-  // dilihat orang; kecepatannya menentukan kesan awal.
+  // Skrip Snap dimuat lebih awal di sini supaya popup di halaman status nanti
+  // tidak perlu menunggu unduhan. Halaman menu sengaja tidak ikut memuatnya —
+  // menu adalah halaman pertama yang dilihat orang, kecepatannya menentukan
+  // kesan awal.
   useEffect(() => {
-    const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
-    if (!clientKey) return;
-
-    // Sandbox atau produksi dinyatakan eksplisit lewat env var, TIDAK ditebak
-    // dari awalan client key. Sebagian akun Midtrans memakai format kunci lama
-    // yang sandbox-nya juga berawalan "Mid-" tanpa "SB-", jadi menebak dari
-    // awalan bisa memuat skrip Snap produksi sementara server memakai sandbox.
-    // Gejalanya: pembayaran gagal dengan pesan yang tidak menjelaskan apa pun.
-    const produksi = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
-
-    const src = produksi
-      ? "https://app.midtrans.com/snap/snap.js"
-      : "https://app.sandbox.midtrans.com/snap/snap.js";
-
-    if (document.querySelector(`script[src="${src}"]`)) {
-      setSnapSiap(true);
-      return;
-    }
-
-    const s = document.createElement("script");
-    s.src = src;
-    s.setAttribute("data-client-key", clientKey);
-    s.onload = () => setSnapSiap(true);
-    document.body.appendChild(s);
+    muatSnap().then(setSnapSiap);
   }, []);
 
   async function bayar() {
@@ -77,9 +40,6 @@ export default function Keranjang() {
 
       const data = await res.json();
 
-      // Bahkan saat Midtrans gagal, kode order sudah ada. Bawa customer ke
-      // halaman status supaya dia punya kode untuk ditunjukkan ke kasir —
-      // jangan tinggalkan dia di layar error tanpa pegangan.
       if (!data?.kode) {
         setGalat(data?.error ?? "Pesanan gagal dibuat. Coba lagi.");
         setProses(false);
@@ -88,33 +48,20 @@ export default function Keranjang() {
 
       const kode: string = data.kode;
 
-      if (!data.snapToken || !window.snap) {
-        keranjang.kosongkan();
-        router.push(`/status?kode=${encodeURIComponent(kode)}`);
-        return;
-      }
-
-      window.snap.pay(data.snapToken, {
-        onSuccess: () => {
-          keranjang.kosongkan();
-          router.push(`/status?kode=${encodeURIComponent(kode)}`);
-        },
-        onPending: () => {
-          keranjang.kosongkan();
-          router.push(`/status?kode=${encodeURIComponent(kode)}`);
-        },
-        onError: () => {
-          keranjang.kosongkan();
-          router.push(`/status?kode=${encodeURIComponent(kode)}`);
-        },
-        // onClose = orang menutup jendela pembayaran. Pesanannya tetap ada.
-        // Ini persis skenario "uang keluar tapi pesanan hilang" yang sistem
-        // ini dibangun untuk mencegah, jadi jangan diam-diam dibuang.
-        onClose: () => {
-          keranjang.kosongkan();
-          router.push(`/status?kode=${encodeURIComponent(kode)}`);
-        },
-      });
+      // URUTAN INI DISENGAJA: pindah ke halaman status DULU, popup pembayaran
+      // dibuka dari sana.
+      //
+      // Versi sebelumnya membuka popup di halaman ini dan baru berpindah saat
+      // Snap memanggil onSuccess. Untuk QRIS itu tidak bisa diandalkan — popup
+      // sering diam di layar "menunggu pembayaran" walaupun uangnya sudah
+      // masuk, jadi callbacknya tidak pernah dipanggil dan pelanggan terjebak.
+      //
+      // Dengan urutan sekarang, apa pun yang terjadi pada popup — hang, ditutup,
+      // gagal dimuat — pelanggan sudah berada di halaman status, dan halaman
+      // itu menyegarkan sendiri tiap 4 detik.
+      if (data.snapToken) simpanToken(kode, data.snapToken);
+      keranjang.kosongkan();
+      router.push(`/status?kode=${encodeURIComponent(kode)}`);
     } catch {
       setGalat("Jaringan bermasalah. Periksa koneksi lalu coba lagi.");
       setProses(false);

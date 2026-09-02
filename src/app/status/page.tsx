@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { brand } from "@/config/brand";
 import { rupiah, jam } from "@/lib/format";
-import type { Order, StatusBayar } from "@/lib/types";
+import type { Order, StatusBayar, StatusKerja } from "@/lib/types";
+import { muatSnap, ambilToken, hapusToken } from "@/lib/snap";
 
 export default function Halaman() {
   return (
@@ -34,6 +35,31 @@ function Status() {
   const kode = useSearchParams().get("kode") ?? "";
   const [order, setOrder] = useState<Order | null>(null);
   const [selesaiMuat, setSelesaiMuat] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [membuka, setMembuka] = useState(false);
+  const popupDibuka = useRef(false);
+
+  // Buka popup pembayaran begitu halaman ini siap, sekali saja.
+  //
+  // Popup dibuka DI SINI, bukan di halaman keranjang, supaya pelanggan sudah
+  // berada di halaman status apa pun yang terjadi pada popupnya. Callback Snap
+  // tidak dipakai untuk berpindah halaman — cukup untuk menutup popup. Yang
+  // memperbarui tampilan adalah polling di bawah, bukan callback.
+  useEffect(() => {
+    if (!kode || popupDibuka.current) return;
+    const t = ambilToken(kode);
+    if (!t) return;
+
+    popupDibuka.current = true;
+    setToken(t);
+    setMembuka(true);
+
+    muatSnap().then((siap) => {
+      setMembuka(false);
+      if (!siap || !window.snap) return;
+      window.snap.pay(t, {});
+    });
+  }, [kode]);
 
   useEffect(() => {
     if (!kode) {
@@ -67,6 +93,21 @@ function Status() {
     };
   }, [kode]);
 
+  // Token tidak berguna lagi begitu pembayaran selesai atau gagal.
+  useEffect(() => {
+    if (order && order.status_bayar !== "belum_bayar") {
+      hapusToken();
+      setToken(null);
+    }
+  }, [order]);
+
+  function bukaLagi() {
+    if (!token) return;
+    muatSnap().then((siap) => {
+      if (siap && window.snap) window.snap.pay(token, {});
+    });
+  }
+
   if (!selesaiMuat) {
     return <div className="p-8 text-center text-sm text-muted">Memuat pesanan…</div>;
   }
@@ -99,6 +140,8 @@ function Status() {
           {t.pesan}
         </p>
       </div>
+
+      <Pengerjaan status={order.status_kerja} />
 
       <div className="mt-4 rounded-card border border-line bg-white p-5">
         <div className="flex items-baseline justify-between border-b border-line pb-3">
@@ -134,6 +177,22 @@ function Status() {
         </div>
       </div>
 
+      {membuka && (
+        <p className="mt-4 text-center text-xs text-muted">Membuka pembayaran…</p>
+      )}
+
+      {/* Jalan keluar kalau popup gagal muncul atau tidak sengaja tertutup.
+          Tanpa ini, pelanggan yang popupnya hang tidak punya cara membayar
+          selain memesan ulang — dan pesanan dobel adalah masalah kasir. */}
+      {!membuka && token && order.status_bayar === "belum_bayar" && (
+        <button
+          onClick={bukaLagi}
+          className="mt-4 w-full rounded-full bg-ink py-3.5 text-[15px] font-semibold text-white"
+        >
+          Buka pembayaran lagi
+        </button>
+      )}
+
       <p className="mt-6 text-center text-xs leading-relaxed text-muted">
         Simpan atau screenshot layar ini. Kode di atas adalah bukti pesananmu
         di sistem {brand.namaSingkat}.
@@ -146,6 +205,73 @@ function Status() {
         Pesan lagi
       </Link>
     </main>
+  );
+}
+
+/**
+ * Keadaan pesanan dari sisi dapur, yang digerakkan kasir dari dashboard.
+ *
+ * Sengaja cuma tiga keadaan tanpa estimasi waktu. Estimasi yang meleset lebih
+ * merusak daripada tidak ada estimasi sama sekali — pelanggan yang dijanjikan
+ * 10 menit akan menagih di menit ke-11.
+ *
+ * Ini yang membuat halaman status tetap berguna setelah pembayaran selesai,
+ * dan membuat tombol ubah status di dashboard punya arti bagi pelanggan,
+ * bukan cuma catatan internal kasir.
+ */
+function Pengerjaan({ status }: { status: StatusKerja }) {
+  const tahap: Array<{ kunci: StatusKerja; label: string }> = [
+    { kunci: "baru", label: "Diterima" },
+    { kunci: "diproses", label: "Disiapkan" },
+    { kunci: "selesai", label: "Siap" },
+  ];
+  const kini = tahap.findIndex((t) => t.kunci === status);
+
+  const pesan =
+    status === "selesai"
+      ? "Pesananmu sudah siap."
+      : status === "diproses"
+      ? "Pesananmu sedang disiapkan."
+      : "Pesananmu sudah diterima dapur.";
+
+  return (
+    <section className="mt-4 rounded-card border border-line bg-white p-5">
+      <div className="flex items-center">
+        {tahap.map((t, n) => {
+          const lewat = n <= kini;
+          return (
+            <div key={t.kunci} className="flex flex-1 items-center last:flex-none">
+              <div className="flex flex-col items-center">
+                <span
+                  aria-hidden="true"
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                    lewat ? "bg-ink text-white" : "border border-line text-muted"
+                  }`}
+                >
+                  {lewat ? "✓" : n + 1}
+                </span>
+                <span
+                  className={`mt-1.5 text-[11px] ${
+                    lewat ? "font-semibold text-ink" : "text-muted"
+                  }`}
+                >
+                  {t.label}
+                </span>
+              </div>
+              {n < tahap.length - 1 && (
+                <span
+                  aria-hidden="true"
+                  className={`mx-1 -mt-5 h-0.5 flex-1 ${
+                    n < kini ? "bg-ink" : "bg-line"
+                  }`}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 border-t border-line pt-3 text-center text-sm">{pesan}</p>
+    </section>
   );
 }
 

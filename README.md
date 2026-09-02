@@ -142,6 +142,10 @@ Efek sampingnya disengaja: order `belum_bayar` akan menumpuk dari orang yang ber
 
 **Nama dan harga disalin ke `order_items`.** Kalau harga menu diubah bulan depan, laporan bulan ini tidak ikut berubah.
 
+**Popup pembayaran dibuka dari halaman status, bukan dari keranjang.** Versi awal membuka Snap di halaman keranjang lalu berpindah saat `onSuccess` dipanggil. Untuk QRIS itu tidak bisa diandalkan — popup sering diam di layar "menunggu pembayaran" walaupun uangnya sudah masuk, jadi callbacknya tidak pernah datang dan pelanggan terjebak. Sekarang pelanggan dipindahkan lebih dulu; popup dibuka di atas halaman status yang memantau sendiri tiap 4 detik. Callback Snap tidak lagi menentukan apa pun.
+
+**Halaman status menampilkan keadaan pengerjaan (Diterima / Disiapkan / Siap).** Ini penambahan di luar 5 layar PRD. Alasannya: datanya sudah ada, polling sudah jalan, dan tanpa itu tombol ubah status di dashboard tidak punya arti bagi pelanggan. Sengaja tanpa estimasi waktu — estimasi yang meleset lebih merusak daripada tidak ada estimasi.
+
 **Tidak ada segmen dinamis (`[id]`, `[kode]`).** Order id dikirim di body PATCH, kode order lewat query `?kode=`. Versi awal memakai `/api/orders/[id]` dan `/status/[kode]`, dan itu menggagalkan pengecekan tipe saat build di Vercel meski lolos di mesin lokal. Penyebab pastinya tidak pernah ditemukan; segmen dinamisnya dibuang karena tidak memberi manfaat yang sepadan dengan risikonya.
 
 **Polling 3 detik, bukan websocket.** Untuk satu outlet dengan satu layar kasir, websocket menambah koneksi yang harus dijaga hidup tanpa manfaat yang terasa.
