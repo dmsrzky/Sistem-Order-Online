@@ -76,10 +76,10 @@ export default function Dashboard() {
       )
     );
     try {
-      await fetch(`/api/orders/${id}`, {
+      await fetch("/api/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ id, ...body }),
       });
     } finally {
       setSibuk(null);

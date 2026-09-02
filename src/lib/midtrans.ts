@@ -44,7 +44,7 @@ export async function buatTransaksiSnap(opts: {
       first_name: `Meja ${opts.nomorMeja}`,
     },
     callbacks: {
-      finish: `${opts.baseUrl}/status/${opts.orderId}`,
+      finish: `${opts.baseUrl}/status?kode=${encodeURIComponent(opts.orderId)}`,
     },
     expiry: {
       unit: "minutes",

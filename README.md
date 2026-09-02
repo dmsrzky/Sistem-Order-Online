@@ -142,6 +142,8 @@ Efek sampingnya disengaja: order `belum_bayar` akan menumpuk dari orang yang ber
 
 **Nama dan harga disalin ke `order_items`.** Kalau harga menu diubah bulan depan, laporan bulan ini tidak ikut berubah.
 
+**Tidak ada segmen dinamis (`[id]`, `[kode]`).** Order id dikirim di body PATCH, kode order lewat query `?kode=`. Versi awal memakai `/api/orders/[id]` dan `/status/[kode]`, dan itu menggagalkan pengecekan tipe saat build di Vercel meski lolos di mesin lokal. Penyebab pastinya tidak pernah ditemukan; segmen dinamisnya dibuang karena tidak memberi manfaat yang sepadan dengan risikonya.
+
 **Polling 3 detik, bukan websocket.** Untuk satu outlet dengan satu layar kasir, websocket menambah koneksi yang harus dijaga hidup tanpa manfaat yang terasa.
 
 **Penjualan hanya menghitung order lunas.** Kalau order gagal ikut dihitung, angka laporan akan lebih besar dari uang di laci — dan sekali itu ketahuan, seluruh laporan tidak lagi dipercaya.

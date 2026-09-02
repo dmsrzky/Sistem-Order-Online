@@ -90,29 +90,29 @@ export default function Keranjang() {
 
       if (!data.snapToken || !window.snap) {
         keranjang.kosongkan();
-        router.push(`/status/${kode}`);
+        router.push(`/status?kode=${encodeURIComponent(kode)}`);
         return;
       }
 
       window.snap.pay(data.snapToken, {
         onSuccess: () => {
           keranjang.kosongkan();
-          router.push(`/status/${kode}`);
+          router.push(`/status?kode=${encodeURIComponent(kode)}`);
         },
         onPending: () => {
           keranjang.kosongkan();
-          router.push(`/status/${kode}`);
+          router.push(`/status?kode=${encodeURIComponent(kode)}`);
         },
         onError: () => {
           keranjang.kosongkan();
-          router.push(`/status/${kode}`);
+          router.push(`/status?kode=${encodeURIComponent(kode)}`);
         },
         // onClose = orang menutup jendela pembayaran. Pesanannya tetap ada.
         // Ini persis skenario "uang keluar tapi pesanan hilang" yang sistem
         // ini dibangun untuk mencegah, jadi jangan diam-diam dibuang.
         onClose: () => {
           keranjang.kosongkan();
-          router.push(`/status/${kode}`);
+          router.push(`/status?kode=${encodeURIComponent(kode)}`);
         },
       });
     } catch {
