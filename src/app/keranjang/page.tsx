@@ -129,7 +129,7 @@ export default function Keranjang() {
                   <button
                     aria-label={`Kurangi ${i.nama}`}
                     onClick={() => keranjang.ubahQty(i.menuId, -1)}
-                    className="h-9 w-9 rounded-full border border-line text-lg leading-none"
+                    className="h-11 w-11 rounded-full border border-line text-lg leading-none"
                   >
                     −
                   </button>
@@ -137,7 +137,7 @@ export default function Keranjang() {
                   <button
                     aria-label={`Tambah ${i.nama}`}
                     onClick={() => keranjang.ubahQty(i.menuId, 1)}
-                    className="h-9 w-9 rounded-full bg-ink text-lg leading-none text-white"
+                    className="h-11 w-11 rounded-full bg-ink text-lg leading-none text-white"
                   >
                     +
                   </button>

@@ -17,9 +17,10 @@ export async function GET() {
   const kategori = (data ?? []).map((k: any) => ({
     id: k.id,
     nama: k.nama,
-    items: (k.menu_items ?? [])
-      .filter((i: any) => i.tersedia)
-      .sort((a: any, b: any) => a.urutan - b.urutan),
+    // Item habis TIDAK disaring keluar. Menyembunyikannya membuat pelanggan
+    // mencari-cari lalu bertanya ke pelayan — persis pekerjaan yang sistem ini
+    // seharusnya kurangi. Ditampilkan abu-abu jauh lebih berguna.
+    items: (k.menu_items ?? []).sort((a: any, b: any) => a.urutan - b.urutan),
   }));
 
   return NextResponse.json({ kategori });

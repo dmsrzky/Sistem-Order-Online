@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { brand } from "@/config/brand";
 import { rupiah, normalkanMeja } from "@/lib/format";
 import { useKeranjang } from "@/lib/keranjang";
-import type { MenuKategori } from "@/lib/types";
+import type { MenuItem, MenuKategori } from "@/lib/types";
 
 export default function Halaman() {
   return (
@@ -116,70 +116,26 @@ function Menu() {
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">
             {k.nama}
           </h2>
-          <div className="space-y-3">
-            {k.items.map((item) => {
-              const diKeranjang = keranjang.items.find((i) => i.menuId === item.id);
-              return (
-                <article
-                  key={item.id}
-                  className="flex gap-3 rounded-card border border-line bg-white p-3"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.photo_url}
-                    alt={item.nama}
-                    className="h-20 w-20 shrink-0 rounded-lg bg-line object-cover"
-                    loading="lazy"
-                  />
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <p className="text-[15px] font-semibold leading-snug">{item.nama}</p>
-                    {item.deskripsi && (
-                      <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted">
-                        {item.deskripsi}
-                      </p>
-                    )}
-                    <div className="mt-auto flex items-center justify-between pt-2">
-                      <span className="text-sm font-bold">{rupiah(item.harga)}</span>
-                      {diKeranjang ? (
-                        <div className="flex items-center gap-3">
-                          <button
-                            aria-label={`Kurangi ${item.nama}`}
-                            onClick={() => keranjang.ubahQty(item.id, -1)}
-                            className="h-9 w-9 rounded-full border border-line text-lg leading-none"
-                          >
-                            −
-                          </button>
-                          <span className="w-4 text-center text-sm font-bold">
-                            {diKeranjang.qty}
-                          </span>
-                          <button
-                            aria-label={`Tambah ${item.nama}`}
-                            onClick={() => keranjang.ubahQty(item.id, 1)}
-                            className="h-9 w-9 rounded-full bg-ink text-lg leading-none text-white"
-                          >
-                            +
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() =>
-                            keranjang.tambah({
-                              menuId: item.id,
-                              nama: item.nama,
-                              harga: item.harga,
-                              photo_url: item.photo_url,
-                            })
-                          }
-                          className="rounded-full bg-ink px-5 py-2 text-sm font-semibold text-white"
-                        >
-                          Tambah
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+          {/* Grid dua kolom, foto persegi besar. Daftar satu kolom dengan foto
+              kecil membuat makanan terlihat murah — dan foto makanan itulah
+              yang sebenarnya menjual, bukan tata letaknya. */}
+          <div className="grid grid-cols-2 gap-3">
+            {k.items.map((item) => (
+              <KartuMenu
+                key={item.id}
+                item={item}
+                qty={keranjang.items.find((i) => i.menuId === item.id)?.qty ?? 0}
+                onTambah={() =>
+                  keranjang.tambah({
+                    menuId: item.id,
+                    nama: item.nama,
+                    harga: item.harga,
+                    photo_url: item.photo_url,
+                  })
+                }
+                onUbah={(d) => keranjang.ubahQty(item.id, d)}
+              />
+            ))}
           </div>
         </section>
       ))}
@@ -198,5 +154,84 @@ function Menu() {
         </div>
       )}
     </main>
+  );
+}
+
+function KartuMenu({
+  item,
+  qty,
+  onTambah,
+  onUbah,
+}: {
+  item: MenuItem;
+  qty: number;
+  onTambah: () => void;
+  onUbah: (delta: number) => void;
+}) {
+  const habis = !item.tersedia;
+
+  return (
+    <article
+      className={`flex flex-col overflow-hidden rounded-card border border-line bg-white ${
+        habis ? "opacity-60" : ""
+      }`}
+    >
+      <div className="relative aspect-square w-full bg-line">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={item.photo_url}
+          alt={item.nama}
+          className={`h-full w-full object-cover ${habis ? "grayscale" : ""}`}
+          loading="lazy"
+        />
+        {habis && (
+          <span className="absolute inset-x-0 bottom-0 bg-ink/80 py-1 text-center text-[11px] font-bold uppercase tracking-wide text-white">
+            Habis hari ini
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col p-3">
+        <p className="text-[14px] font-semibold leading-snug">{item.nama}</p>
+        {item.deskripsi && (
+          <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted">
+            {item.deskripsi}
+          </p>
+        )}
+
+        <p className="mt-auto pt-2 text-[15px] font-bold">{rupiah(item.harga)}</p>
+
+        <div className="mt-2">
+          {habis ? (
+            <p className="py-2 text-center text-xs text-muted">Tidak tersedia</p>
+          ) : qty > 0 ? (
+            <div className="flex items-center justify-between">
+              <button
+                aria-label={`Kurangi ${item.nama}`}
+                onClick={() => onUbah(-1)}
+                className="h-11 w-11 rounded-full border border-line text-lg leading-none"
+              >
+                −
+              </button>
+              <span className="text-sm font-bold">{qty}</span>
+              <button
+                aria-label={`Tambah ${item.nama}`}
+                onClick={() => onUbah(1)}
+                className="h-11 w-11 rounded-full bg-ink text-lg leading-none text-white"
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onTambah}
+              className="w-full rounded-full bg-ink py-3 text-sm font-semibold text-white"
+            >
+              Tambah
+            </button>
+          )}
+        </div>
+      </div>
+    </article>
   );
 }

@@ -142,6 +142,12 @@ Efek sampingnya disengaja: order `belum_bayar` akan menumpuk dari orang yang ber
 
 **Nama dan harga disalin ke `order_items`.** Kalau harga menu diubah bulan depan, laporan bulan ini tidak ikut berubah.
 
+**Menu ditampilkan sebagai grid dua kolom dengan foto persegi besar.** Versi awal memakai daftar satu kolom dengan foto 80px. Untuk produk yang dijual lewat foto makanan, foto kecil membuat menunya terlihat murah — dan itu hal pertama yang dilihat calon klien dari HP.
+
+**Item habis tetap ditampilkan, diabukan, bertanda "Habis hari ini".** Sebelumnya item tidak tersedia disaring keluar sampai hilang. Menyembunyikannya membuat pelanggan mencari-cari lalu bertanya ke pelayan — persis pekerjaan yang sistem ini seharusnya kurangi.
+
+**Area sentuh minimal 44px.** Tombol tambah dan stepper jumlah diukur dengan Playwright di lebar 375px. Tombol kecil membuat orang mengetuk dua kali dan pesanannya jadi dobel.
+
 **Popup pembayaran dibuka dari halaman status, bukan dari keranjang.** Versi awal membuka Snap di halaman keranjang lalu berpindah saat `onSuccess` dipanggil. Untuk QRIS itu tidak bisa diandalkan — popup sering diam di layar "menunggu pembayaran" walaupun uangnya sudah masuk, jadi callbacknya tidak pernah datang dan pelanggan terjebak. Sekarang pelanggan dipindahkan lebih dulu; popup dibuka di atas halaman status yang memantau sendiri tiap 4 detik. Callback Snap tidak lagi menentukan apa pun.
 
 **Halaman status menampilkan keadaan pengerjaan (Diterima / Disiapkan / Siap).** Ini penambahan di luar 5 layar PRD. Alasannya: datanya sudah ada, polling sudah jalan, dan tanpa itu tombol ubah status di dashboard tidak punya arti bagi pelanggan. Sengaja tanpa estimasi waktu — estimasi yang meleset lebih merusak daripada tidak ada estimasi.
