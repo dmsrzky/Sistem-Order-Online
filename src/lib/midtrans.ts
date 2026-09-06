@@ -29,7 +29,25 @@ export async function buatTransaksiSnap(opts: {
 
   const total = opts.items.reduce((n, i) => n + i.harga * i.qty, 0);
 
-  const body = {
+  /**
+   * Batasi metode pembayaran yang ditampilkan Snap.
+   *
+   * Diisi lewat env var supaya bisa berbeda per klien tanpa mengubah kode.
+   * Kosongkan untuk menampilkan semua metode yang aktif di akun Midtrans.
+   *
+   * Untuk QRIS saja: MIDTRANS_ENABLED_PAYMENTS=other_qris
+   *
+   * CATATAN: nama kanal di Midtrans bisa berubah dan aku belum memverifikasi
+   * "other_qris" pada akun sandbox-mu. Kalau setelah diisi daftar metodenya
+   * jadi kosong, kosongkan env var ini dan atur lewat dashboard Midtrans di
+   * Settings > Snap Preferences — itu sumber yang pasti benar.
+   */
+  const kanal = (process.env.MIDTRANS_ENABLED_PAYMENTS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const body: Record<string, unknown> = {
     transaction_details: {
       order_id: opts.orderId,
       gross_amount: total,
@@ -51,6 +69,8 @@ export async function buatTransaksiSnap(opts: {
       duration: 30,
     },
   };
+
+  if (kanal.length > 0) body.enabled_payments = kanal;
 
   const auth = Buffer.from(`${serverKey}:`).toString("base64");
 
