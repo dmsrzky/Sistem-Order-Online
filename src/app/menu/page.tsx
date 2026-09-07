@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { brand } from "@/config/brand";
 import { rupiah, normalkanMeja } from "@/lib/format";
 import { useKeranjang } from "@/lib/keranjang";
+import { bacaRiwayat } from "@/lib/riwayat";
 import type { MenuItem, MenuKategori } from "@/lib/types";
 
 export default function Halaman() {
@@ -31,7 +32,12 @@ function Menu() {
   const [kategori, setKategori] = useState<MenuKategori[]>([]);
   const [aktif, setAktif] = useState<number | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
+  const [adaRiwayat, setAdaRiwayat] = useState(false);
   const keranjang = useKeranjang();
+
+  useEffect(() => {
+    setAdaRiwayat(bacaRiwayat().length > 0);
+  }, []);
 
   useEffect(() => {
     if (mejaUrl) keranjang.setMeja(mejaUrl);
@@ -68,16 +74,25 @@ function Menu() {
     <main className="mx-auto max-w-md pb-28">
       <header className="sticky top-0 z-20 border-b border-line bg-paper/95 backdrop-blur">
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="min-w-0">
-            <p className="truncate text-base font-bold leading-tight">{brand.namaOutlet}</p>
-            <p className="truncate text-xs text-muted">{brand.tagline}</p>
+          <p className="min-w-0 truncate text-base font-bold leading-tight">
+            {brand.namaOutlet}
+          </p>
+          <div className="ml-3 flex shrink-0 items-center gap-2">
+            {adaRiwayat && (
+              <Link
+                href="/pesanan"
+                className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold"
+              >
+                Pesanan
+              </Link>
+            )}
+            <span
+              className="rounded-full px-3 py-1.5 text-sm font-bold text-ink"
+              style={{ backgroundColor: brand.warnaAksen }}
+            >
+              Meja {meja}
+            </span>
           </div>
-          <span
-            className="ml-3 shrink-0 rounded-full px-3 py-1.5 text-sm font-bold text-ink"
-            style={{ backgroundColor: brand.warnaAksen }}
-          >
-            Meja {meja}
-          </span>
         </div>
 
         {kategori.length > 0 && (
@@ -109,6 +124,25 @@ function Menu() {
         <p className="mx-4 mt-6 rounded-card border border-gagal/30 bg-gagal/5 p-4 text-sm text-gagal">
           {galat}
         </p>
+      )}
+
+      {brand.banner && (
+        <section className="px-4 pt-4">
+          <div className="relative overflow-hidden rounded-card">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={brand.banner.gambar}
+              alt=""
+              className="aspect-[16/9] w-full object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink via-ink/80 to-transparent px-3 pb-3 pt-10">
+              <p className="text-sm font-bold text-white">{brand.banner.judul}</p>
+              <p className="mt-0.5 text-xs leading-snug text-white/80">
+                {brand.banner.teks}
+              </p>
+            </div>
+          </div>
+        </section>
       )}
 
       {kategori.map((k) => (

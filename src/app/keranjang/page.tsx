@@ -7,6 +7,7 @@ import { brand } from "@/config/brand";
 import { rupiah } from "@/lib/format";
 import { useKeranjang } from "@/lib/keranjang";
 import { muatSnap, simpanToken } from "@/lib/snap";
+import { catatRiwayat } from "@/lib/riwayat";
 
 export default function Keranjang() {
   const keranjang = useKeranjang();
@@ -60,6 +61,7 @@ export default function Keranjang() {
       // gagal dimuat — pelanggan sudah berada di halaman status, dan halaman
       // itu menyegarkan sendiri tiap 4 detik.
       if (data.snapToken) simpanToken(kode, data.snapToken);
+      catatRiwayat(kode, keranjang.meja ?? "");
       keranjang.kosongkan();
       router.push(`/status?kode=${encodeURIComponent(kode)}`);
     } catch {

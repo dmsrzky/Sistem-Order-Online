@@ -142,6 +142,10 @@ Efek sampingnya disengaja: order `belum_bayar` akan menumpuk dari orang yang ber
 
 **Nama dan harga disalin ke `order_items`.** Kalau harga menu diubah bulan depan, laporan bulan ini tidak ikut berubah.
 
+**Halaman "Pesanan saya" (`/pesanan`).** Daftar kode order disimpan di localStorage HP pelanggan, isinya diambil ulang dari server tiap 5 detik. Sistem ini tanpa login, jadi tidak ada cara lain mengetahui "pesanan siapa". Konsekuensinya: kalau pelanggan menghapus riwayat browser atau ganti HP, riwayatnya hilang — penggantinya adalah kasir, yang tetap punya semua data di dashboard.
+
+**Banner di atas menu murni hiasan.** Diatur di `src/config/brand.ts`, gambarnya `/public/banner.jpg`. TIDAK terhubung ke sistem diskon apa pun. Kalau klien minta promo yang benar-benar memotong harga, itu pekerjaan terpisah yang mengubah struktur harga dan laporan.
+
 **Menu ditampilkan sebagai grid dua kolom dengan foto persegi besar.** Versi awal memakai daftar satu kolom dengan foto 80px. Untuk produk yang dijual lewat foto makanan, foto kecil membuat menunya terlihat murah — dan itu hal pertama yang dilihat calon klien dari HP.
 
 **Item habis tetap ditampilkan, diabukan, bertanda "Habis hari ini".** Sebelumnya item tidak tersedia disaring keluar sampai hilang. Menyembunyikannya membuat pelanggan mencari-cari lalu bertanya ke pelayan — persis pekerjaan yang sistem ini seharusnya kurangi.

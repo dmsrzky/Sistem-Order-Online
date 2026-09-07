@@ -30,6 +30,21 @@ export const brand = {
   /** Logo teks. Kalau klien punya file logo, taruh di /public/logo.png. */
   logoUrl: null as string | null,
 
+  /**
+   * Banner di atas menu. Set null untuk mematikannya.
+   *
+   * Ini murni hiasan — TIDAK terhubung ke sistem diskon apa pun. Kalau klien
+   * minta promo yang benar-benar memotong harga, itu pekerjaan terpisah yang
+   * mengubah struktur harga dan laporan, bukan sekadar mengganti gambar ini.
+   *
+   * Ganti gambarnya dengan menimpa /public/banner.jpg (rasio 16:9).
+   */
+  banner: {
+    gambar: "/banner.jpg",
+    judul: "Paket Hemat Sore",
+    teks: "Kopi susu + pisang goreng, tanya kasir untuk detailnya",
+  } as { gambar: string; judul: string; teks: string } | null,
+
   /** Zona waktu untuk semua perhitungan "hari ini" di laporan. */
   zonaWaktu: "Asia/Jakarta",
   labelZonaWaktu: "WIB",

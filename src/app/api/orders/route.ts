@@ -14,6 +14,38 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: NextRequest) {
   const kode = req.nextUrl.searchParams.get("kode");
+  const kodes = req.nextUrl.searchParams.get("kodes");
+
+  /**
+   * Dipakai halaman "Pesanan saya" di sisi pelanggan. Daftar kode dikirim
+   * dari localStorage browser, bukan dari sesi login — sistem ini memang
+   * tanpa akun. Konsekuensinya: siapa pun yang tahu kode order bisa melihat
+   * isinya. Untuk pesanan di meja restoran, itu risiko yang sepadan dengan
+   * tidak memaksa orang mendaftar.
+   */
+  if (kodes) {
+    const daftar = kodes
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 20);
+
+    if (daftar.length === 0) return NextResponse.json({ orders: [] });
+
+    const { data, error } = await db
+      .from("orders")
+      .select(
+        "id, kode, nomor_meja, total, status_bayar, status_kerja, ditandai_manual, dibuat_pada, dibayar_pada, order_items(nama, harga, qty)"
+      )
+      .in("kode", daftar)
+      .order("dibuat_pada", { ascending: false });
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({
+      orders: (data ?? []).map((o: any) => ({ ...o, items: o.order_items ?? [] })),
+    });
+  }
 
   if (kode) {
     const { data, error } = await db
